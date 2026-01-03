@@ -1,33 +1,17 @@
-import 'dart:io';
-import 'dart:convert';
-import 'dart:async';
+import 'read_input_file.dart';
+import 'globals.dart';
 
-File file =	File(	'01-input.txt'	)	;
+late int remainder;
 
-int leftLimit = 0 			;
-int rightLimit = 99			;
-int currentPosition = 50	;
-int zeroCount = 0 			;
-
-
-void main() async 
+void main(List<String> args) async 
 {
-	await fileRead()	;
-	print(zeroCount)	;
+	if(args.isEmpty) throw FormatException('must pass filename first');
+
+	await fileRead(args[0], parseLine)			;
+	print('counter at zero: $zeroCount')		;
+	print('zeros passed:  $zerosPassed')		;
+	print('total: ${zeroCount + zerosPassed}')	;
 }
-
-Future<void> fileRead() async 
-{
-	Stream fileStreamData	= file
-								.openRead()
-								.transform(	utf8.decoder	)
-								.transform(	LineSplitter()	)	;
-
-	await for(var line in fileStreamData){
-		parseLine	(	line 	)	;
-	}
-}
-
 
 
 void parseLine(String string)
@@ -36,56 +20,62 @@ void parseLine(String string)
 	int? spaces = int.tryParse(
 					string.substring(1)	)	;
 		
-	if(spaces == null) throw Exception();
-	
+	if(spaces == null) throw Exception()	;	
 
+
+
+
+	start(spaces);
+	turnDial(spaces, lr);
+	stop();	
+
+}
+
+void start(int spaces){
+	final divs = spaces ~/ 100;
+	zerosPassed += divs;
+
+ 	remainder = spaces % 100;
+}
+
+
+void turnDial(int spaces, String lr){
 	if(lr == 'L')
 	{
 		moveLeft(spaces)	;
 	} else {
 		moveRight(spaces)	;
 	}
-
-	if(currentPosition == 0) zeroCount++	;
-
 }
 
 
-void moveLeft(int spaces)
-{
+void stop(){
+	if(currentPosition == 100) currentPosition = 0;
 
-	int diff = currentPosition - spaces;
-
-	if(	diff >= 0)
-	{
-		currentPosition -= spaces;
-		return;
-	}
-
-	calculateCurrentPosition(diff);
+	if(currentPosition == 0) zeroCount++ ;
 }
 
-void moveRight(	int spaces	)
-{
 
-	int diff = currentPosition + spaces;
-	
-
-	if(	diff <= 99)
-	{
-		currentPosition += spaces;
-		return;
-	}
-
-	calculateCurrentPosition(diff);
+void moveLeft(int spaces) {
+    int newPos = currentPosition - remainder;
+    if (newPos < 0) {
+        if (currentPosition != 0) {
+            zerosPassed++;
+        }
+        currentPosition = newPos + 100;
+    } else {
+        currentPosition = newPos;
+    }
 }
 
-void calculateCurrentPosition(int diff){
-	if ( diff % 100 == 0)
-	{
-		currentPosition = 0;
-	} else {
-		currentPosition = diff % 100;
-	}
+void moveRight(int spaces) {
+    int newPos = currentPosition + remainder; 
+    if (newPos > 100) {
+        if (currentPosition != 0) {
+            zerosPassed++;
+        }
+        currentPosition = newPos - 100;
+    } else {
+        currentPosition = newPos;
+    }
 }
-
